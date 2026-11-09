@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>WorldTV — Free Live TV</title>
+  <meta name="description" content="Watch thousands of free, legal live TV channels from around the world in your browser.">
+  <meta name="theme-color" content="#0b0d14">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    try { const t = localStorage.getItem('wtv.theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-btn only-mobile" id="menuBtn" aria-label="Open menu" title="Menu">
+      <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <a class="brand" href="#" id="brandLink">
+      <img src="assets/icon.svg" alt="" width="28" height="28">
+      <span>World<b>TV</b></span>
+    </a>
+    <div class="search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="search" type="search" placeholder="Search channels, countries, languages…  ( / )" autocomplete="off" spellcheck="false">
+    </div>
+    <button class="icon-btn" id="randomBtn" title="Random channel (R)" aria-label="Random channel">
+      <svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+    </button>
+    <button class="icon-btn" id="themeBtn" title="Switch light / dark" aria-label="Switch theme">
+      <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+    <button class="icon-btn" id="settingsBtn" title="Playlists & settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <div class="nav-group" id="libraryNav"></div>
+        <details class="nav-section" open>
+          <summary>Categories</summary>
+          <div id="categoryNav"></div>
+        </details>
+        <details class="nav-section" open>
+          <summary>Countries</summary>
+          <input class="nav-filter" id="countryFilter" type="search" placeholder="Find a country…" autocomplete="off">
+          <div id="countryNav"></div>
+        </details>
+      </nav>
+      <p class="credit">Channel data: <a href="https://github.com/iptv-org/iptv" target="_blank" rel="noopener">iptv-org</a>. All streams are publicly available on the web; WorldTV hosts no video.</p>
+    </aside>
+    <div class="scrim" id="scrim"></div>
+
+    <main class="main" id="main">
+      <section class="player-wrap" id="playerWrap" hidden>
+        <div class="player" id="player">
+          <video id="video" playsinline controls></video>
+          <div class="overlay" id="overlay" hidden>
+            <div class="spinner" id="spinner"></div>
+            <div class="overlay-msg" id="overlayMsg"></div>
+            <div class="overlay-actions" id="overlayActions"></div>
+          </div>
+          <div class="osd" id="osd"></div>
+        </div>
+        <div class="now" id="now"></div>
+      </section>
+
+      <section class="browse">
+        <div class="hero" id="hero"></div>
+        <div class="toolbar">
+          <div class="view-title">
+            <h1 id="viewTitle">All channels</h1>
+            <span class="count" id="viewCount"></span>
+          </div>
+          <div class="tools">
+            <select id="langFilter" title="Language"><option value="">All languages</option></select>
+            <select id="statusFilter" title="Which streams to show">
+              <option value="ok">✓ Verified working</option>
+              <option value="playable">Likely playable</option>
+              <option value="all">Everything</option>
+            </select>
+            <select id="sortSel" title="Sort">
+              <option value="name">A → Z</option>
+              <option value="country">By country</option>
+              <option value="quality">Best quality</option>
+            </select>
+            <button class="icon-btn small" id="layoutBtn" title="Grid / list view" aria-label="Toggle grid or list">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="grid" id="grid"></div>
+        <div class="sentinel" id="sentinel"></div>
+        <div class="empty" id="empty" hidden></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="settings" class="modal">
+    <form method="dialog" class="modal-head">
+      <h2>Playlists &amp; settings</h2>
+      <button class="icon-btn" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </form>
+    <div class="modal-body">
+      <h3>Add your own playlist (M3U)</h3>
+      <div class="row">
+        <input id="m3uUrl" type="url" placeholder="https://example.com/playlist.m3u">
+        <button class="btn" id="m3uUrlBtn">Add from URL</button>
+      </div>
+      <div class="row">
+        <label class="btn ghost file-btn">Open .m3u file<input id="m3uFile" type="file" accept=".m3u,.m3u8,audio/x-mpegurl,application/x-mpegurl,text/plain" hidden></label>
+        <span class="hint">Or paste any single .m3u8 stream link into the URL box to play it.</span>
+      </div>
+      <div id="playlistList" class="playlist-list"></div>
+
+      <h3>Channel list</h3>
+      <p class="hint" id="dataInfo"></p>
+      <div class="row">
+        <button class="btn ghost" id="refreshBtn">Update from live database</button>
+        <button class="btn ghost" id="exportBtn">Export current view as M3U</button>
+      </div>
+      <p class="hint" id="refreshStatus"></p>
+
+      <h3>Playback</h3>
+      <label class="check"><input type="checkbox" id="autoSkip" checked> If a channel fails, skip to the next one automatically</label>
+      <label class="check"><input type="checkbox" id="autoplayHero" checked> Resume last channel when I open the app</label>
+
+      <h3>Keyboard shortcuts</h3>
+      <div class="keys">
+        <span><kbd>/</kbd> Search</span><span><kbd>↑</kbd><kbd>↓</kbd> or <kbd>PgUp</kbd><kbd>PgDn</kbd> Channel up / down</span>
+        <span><kbd>Space</kbd> Play / pause</span><span><kbd>F</kbd> Fullscreen</span><span><kbd>M</kbd> Mute</span>
+        <span><kbd>R</kbd> Random channel</span><span><kbd>S</kbd> Favorite</span><span><kbd>P</kbd> Picture-in-picture</span>
+        <span><kbd>Esc</kbd> Close player</span>
+      </div>
+
+      <h3>Data</h3>
+      <button class="btn danger ghost" id="resetBtn">Clear favorites, history and playlists</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
