@@ -1,0 +1,61 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Optional release signing: put these in android/keystore.properties (not committed)
+//   storeFile=/path/to/worldtv.jks
+//   storePassword=...
+//   keyAlias=worldtv
+//   keyPassword=...
+def ksFile = rootProject.file('keystore.properties')
+def ks = new Properties()
+if (ksFile.exists()) ksFile.withInputStream { ks.load(it) }
+
+android {
+    namespace 'io.github.worldtv'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'io.github.worldtv'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+
+    signingConfigs {
+        if (ks['storeFile']) {
+            release {
+                storeFile file(ks['storeFile'])
+                storePassword ks['storePassword']
+                keyAlias ks['keyAlias']
+                keyPassword ks['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (ks['storeFile']) signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets.main.assets.srcDirs += layout.buildDirectory.dir('generated/www-assets')
+}
+
+// Copy the web app (the same files as the website) into the APK.
+def copyWeb = tasks.register('copyWebApp', Copy) {
+    def root = rootProject.projectDir.parentFile
+    from(root) {
+        include 'index.html', 'manifest.webmanifest', 'css/**', 'js/**', 'data/**', 'assets/**'
+    }
+    from(project.file('vendor')) { into 'vendor' }
+    into layout.buildDirectory.dir('generated/www-assets/www')
+}
+tasks.named('preBuild') { dependsOn copyWeb }

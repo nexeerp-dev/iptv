@@ -36,6 +36,40 @@ that broadcasters make publicly available. WorldTV hosts no video itself.
 | `P` | Picture-in-picture |
 | `Esc` | Close the player |
 
+## Android app
+
+Download **[WorldTV.apk](https://nexeerp-dev.github.io/iptv/download/WorldTV.apk)** on your phone and open it to install
+(Android 8 or newer; allow "Install unknown apps" for your browser when asked).
+
+The app plays more channels than the website: it fetches streams itself, so
+stations whose servers block web players, and plain `http://` streams, work too.
+It also has native fullscreen with auto-rotate, a floating mini player when you
+leave the app, share to other apps, "Open in another player" (VLC, MX Player),
+TV remote channel buttons, and it picks up the weekly channel list from the
+website automatically.
+
+### Building the APK
+
+Needs JDK 17+ and the Android SDK (platform 35).
+
+```bash
+cd android
+./gradlew assembleRelease     # app/build/outputs/apk/release/
+```
+
+Without `android/keystore.properties` the release APK is unsigned; use
+`./gradlew assembleDebug` for a quick installable build. To sign with your own
+key, create `android/keystore.properties` (never commit it):
+
+```
+storeFile=/path/to/worldtv-release.jks
+storePassword=...
+keyAlias=worldtv
+keyPassword=...
+```
+
+Updates to an installed app must be signed with the same key.
+
 ## Run it
 
 It's a static site with no build step. It must be opened through a web server
@@ -99,6 +133,8 @@ data/channels.json      the bundled channel list
 scripts/build-data.mjs  builds data/channels.json
 scripts/probe.py        checks which streams work
 sw.js                   offline cache for the app itself
+android/                Android app (WebView shell + native stream fetching)
+download/WorldTV.apk    ready-to-install Android app
 ```
 
 Playback uses [hls.js](https://github.com/video-dev/hls.js) and, for the few

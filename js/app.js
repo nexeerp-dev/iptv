@@ -9,7 +9,13 @@ const store = {
   set(k, v) { try { localStorage.setItem('wtv.' + k, JSON.stringify(v)); return true; } catch { return false; } },
 };
 const PAGE = 60;
-const IS_HTTPS = location.protocol === 'https:';
+// Inside the Android app streams are fetched natively, so servers that block
+// web players and plain-http streams work too.
+const NATIVE = (() => { try { return window.WorldTVAndroid?.isApp() === true; } catch { return false; } })();
+const SITE_URL = NATIVE ? window.WorldTVAndroid.siteUrl() : location.href.split('#')[0];
+const IS_HTTPS = !NATIVE && location.protocol === 'https:';
+const APK_URL = 'https://nexeerp-dev.github.io/iptv/download/WorldTV.apk';
+const isVerified = s => s[2] === 'ok' || (NATIVE && s[2] === 'nc');
 const CAT_ICONS = {
   animation: '🎨', auto: '🚗', business: '💼', classic: '🎞️', comedy: '😂', cooking: '🍳', culture: '🎭',
   documentary: '🌍', education: '🎓', entertainment: '🎬', family: '👨‍👩‍👧', general: '📺', interactive: '🕹️',
@@ -49,7 +55,7 @@ function playable(s) {
 function streamsFor(ch, level = state.status) {
   return ch.s.filter(s => playable(s) && (
     level === 'all' ? true :
-    level === 'ok' ? s[2] === 'ok' :
+    level === 'ok' ? isVerified(s) :
     s[2] !== 'nc'));
 }
 function bestQuality(ch) { return Math.max(0, ...ch.s.map(s => parseInt(s[1]) || 0)); }
@@ -165,7 +171,7 @@ function cardHTML(ch) {
   const playing = state.current?.ch.id === ch.id;
   const fav = state.favs.has(ch.id);
   const cat = ch.g[0] ? (state.catalog.categories[ch.g[0]] || ch.g[0]) : '';
-  const verified = ch.s.some(s => s[2] === 'ok');
+  const verified = ch.s.some(isVerified);
   return `<article class="card${playing ? ' playing' : ''}" data-id="${esc(ch.id)}" tabindex="0" role="button" aria-label="Play ${esc(ch.n)}">
     <div class="thumb" style="--h:${hue(ch.n)}">
       <span class="initials">${esc(initials(ch.n))}</span>
@@ -209,7 +215,7 @@ function renderHero() {
   const hero = $('#hero');
   if (state.view.type !== 'all' || state.query || state.current) { hero.innerHTML = ''; return; }
   const countries = new Set(state.catalog.channels.map(c => c.c)).size;
-  const verified = state.catalog.channels.filter(c => c.s.some(s => s[2] === 'ok')).length;
+  const verified = state.catalog.channels.filter(c => c.s.some(isVerified)).length;
   const picks = ['news', 'sports', 'movies', 'music', 'kids', 'documentary', 'entertainment', 'science']
     .filter(c => state.catalog.categories[c]);
   hero.innerHTML = `<div class="hero-card">
@@ -218,7 +224,10 @@ function renderHero() {
       <p>${state.catalog.channels.length.toLocaleString()} free channels from ${countries} countries${verified ? `, ${verified.toLocaleString()} checked and working` : ''}. Pick a channel and it starts playing.</p>
       <div class="chips">${picks.map(c => `<a class="chip" href="${viewHash({ type: 'category', value: c })}">${CAT_ICONS[c]} ${esc(state.catalog.categories[c])}</a>`).join('')}</div>
     </div>
-    <button class="btn big-btn" data-action="random">🎲 Surprise me</button>
+    <div class="hero-actions">
+      <button class="btn big-btn" data-action="random">🎲 Surprise me</button>
+      ${!NATIVE && /Android/i.test(navigator.userAgent) ? `<a class="btn ghost big-btn" href="${APK_URL}" download>📱 Get the Android app</a>` : ''}
+    </div>
   </div>`;
 }
 
@@ -398,7 +407,28 @@ function closePlayer() {
   renderHero();
 }
 
-video.addEventListener('playing', () => { clearTimeout(loadTimer); hideOverlay(); });
+video.addEventListener('playing', () => { clearTimeout(loadTimer); hideOverlay(); if (NATIVE) window.WorldTVAndroid.setPlaying(true); });
+video.addEventListener('pause', () => { if (NATIVE) window.WorldTVAndroid.setPlaying(false); });
+video.addEventListener('emptied', () => { if (NATIVE) window.WorldTVAndroid.setPlaying(false); });
+
+function goFullscreen() {
+  if (!document.fullscreenElement && state.current) $('#player').requestFullscreen?.().catch(() => {});
+}
+
+// Called by the Android app (back button, TV remote, leaving the app).
+window.WorldTVNative = {
+  back() {
+    if ($('#settings').open) { $('#settings').close(); return true; }
+    if (document.body.classList.contains('menu-open')) { closeMenu(); return true; }
+    if (state.current) { closePlayer(); return true; }
+    if (state.query) { $('#search').value = ''; state.query = ''; renderGrid(); return true; }
+    if (state.view.type !== 'all') { setView({ type: 'all', value: '' }); return true; }
+    return false;
+  },
+  step(dir) { if (state.current) step(dir); else randomChannel(); },
+  pause() { if (state.current && !video.paused) video.pause(); },
+  goFullscreen,
+};
 video.addEventListener('waiting', () => { if (state.current && $('#overlay').hidden) showOverlay('', [], true); });
 video.addEventListener('canplay', () => { if (!$('#overlay').querySelector('.btn')) hideOverlay(); });
 video.addEventListener('volumechange', () => store.set('volume', { v: video.volume, m: video.muted }));
@@ -436,6 +466,7 @@ function renderNow() {
       ${sources[idx]?.[3] ? `<span class="pill warn">${esc(sources[idx][3])}</span>` : ''}
       ${sources[idx] ? `<span class="pill ${sources[idx][2]}">${esc(STATUS_TEXT[sources[idx][2]] || '')}</span>` : ''}
       ${ch.w ? `<a class="pill" href="${esc(ch.w)}" target="_blank" rel="noopener">Website ↗</a>` : ''}
+      ${sources[idx] && NATIVE ? `<button class="pill" data-action="external" title="Open in VLC, MX Player or another app">Open in another player</button>` : ''}
       ${sources[idx] ? `<button class="pill" data-action="copy" title="Copy stream URL to use in VLC or another player">Copy stream URL</button>` : ''}
     </div>`;
 }
@@ -515,11 +546,21 @@ function handleAction(action) {
     case 'fav': if (cur) toggleFav(cur.ch.id); break;
     case 'close': closePlayer(); break;
     case 'pip':
+      if (NATIVE) { goFullscreen(); window.WorldTVAndroid.pip(); break; }
       if (document.pictureInPictureElement) document.exitPictureInPicture();
       else video.requestPictureInPicture?.().catch(() => toast('Mini player not available for this stream'));
       break;
-    case 'share': if (cur) copy(location.href, '🔗 Link copied'); break;
-    case 'copy': if (cur) copy(cur.sources[cur.idx][0], 'Stream URL copied — open it in VLC: Media → Open Network Stream'); break;
+    case 'share':
+      if (!cur) break;
+      if (NATIVE) window.WorldTVAndroid.share(cur.ch.n, `Watch ${cur.ch.n} live on WorldTV: ${SITE_URL}#ch=${encodeURIComponent(cur.ch.id)}`);
+      else copy(location.href, '🔗 Link copied');
+      break;
+    case 'copy':
+      if (!cur) break;
+      if (NATIVE) window.WorldTVAndroid.copy(cur.sources[cur.idx][0], 'Stream URL copied');
+      else copy(cur.sources[cur.idx][0], 'Stream URL copied — open it in VLC: Media → Open Network Stream');
+      break;
+    case 'external': if (cur) { video.pause(); window.WorldTVAndroid.openInPlayer(cur.sources[cur.idx][0], cur.ch.n); } break;
   }
 }
 
@@ -734,7 +775,26 @@ async function start() {
   renderGrid();
   const target = ch ? state.byId.get(ch) : (state.settings.resume ? state.byId.get(store.get('last', '')) : null);
   if (target) play(target);
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (!NATIVE && 'serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (NATIVE) refreshFromSite();
+}
+
+// The app ships with a channel list, then quietly picks up the weekly
+// refreshed list from the website.
+async function refreshFromSite() {
+  try {
+    const ctl = new AbortController();
+    setTimeout(() => ctl.abort(), 30000);
+    const res = await fetch(SITE_URL + 'data/channels.json', { signal: ctl.signal, cache: 'no-store' });
+    if (!res.ok) return;
+    const fresh = await res.json();
+    if (!fresh?.channels?.length || new Date(fresh.updated) <= new Date(state.catalog.updated)) return;
+    state.catalog = fresh;
+    await cacheCatalog(fresh);
+    indexChannels(); fillLanguages(); renderSidebar();
+    if (!state.current) renderGrid();
+    toast(`Channel list updated · ${fresh.channels.length.toLocaleString()} channels`);
+  } catch {}
 }
 
 start();
