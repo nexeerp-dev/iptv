@@ -14,7 +14,7 @@ const PAGE = 60;
 const NATIVE = (() => { try { return window.WorldTVAndroid?.isApp() === true; } catch { return false; } })();
 const SITE_URL = NATIVE ? window.WorldTVAndroid.siteUrl() : location.href.split('#')[0];
 const IS_HTTPS = !NATIVE && location.protocol === 'https:';
-const APK_URL = 'https://nexeerp-dev.github.io/iptv/download/WorldTV.apk';
+const APK_URL = 'https://nexeerp-dev.github.io/iptv/download/Zapply.apk';
 const isVerified = s => s[2] === 'ok' || (NATIVE && s[2] === 'nc');
 const CAT_ICONS = {
   animation: '🎨', auto: '🚗', business: '💼', classic: '🎞️', comedy: '😂', cooking: '🍳', culture: '🎭',
@@ -297,7 +297,7 @@ function play(ch, srcIdx = 0) {
   const sources = streamsFor(ch, 'all');
   state.current = { ch, idx: srcIdx, sources };
   $('#playerWrap').hidden = false;
-  document.title = `${ch.n} — WorldTV`;
+  document.title = `${ch.n} — Zapply`;
   history.replaceState(null, '', viewHash(state.view, ch.id));
   addRecent(ch.id);
   renderNow();
@@ -401,7 +401,7 @@ function closePlayer() {
   destroyEngines();
   state.current = null;
   $('#playerWrap').hidden = true;
-  document.title = 'WorldTV — Free Live TV';
+  document.title = 'Zapply — Free Live TV';
   history.replaceState(null, '', viewHash(state.view));
   markPlaying();
   renderHero();
@@ -552,7 +552,7 @@ function handleAction(action) {
       break;
     case 'share':
       if (!cur) break;
-      if (NATIVE) window.WorldTVAndroid.share(cur.ch.n, `Watch ${cur.ch.n} live on WorldTV: ${SITE_URL}#ch=${encodeURIComponent(cur.ch.id)}`);
+      if (NATIVE) window.WorldTVAndroid.share(cur.ch.n, `Watch ${cur.ch.n} live on Zapply: ${SITE_URL}#ch=${encodeURIComponent(cur.ch.id)}`);
       else copy(location.href, '🔗 Link copied');
       break;
     case 'copy':
@@ -675,7 +675,7 @@ function bind() {
     const text = toM3U(state.list, state.catalog, ch => streamsFor(ch, 'all')[0]);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([text], { type: 'audio/x-mpegurl' }));
-    a.download = (viewLabel(state.view).replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'worldtv') + '.m3u';
+    a.download = (viewLabel(state.view).replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'zapply') + '.m3u';
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });

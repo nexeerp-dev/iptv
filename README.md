@@ -1,4 +1,4 @@
-# WorldTV — free live TV from around the world
+# Zapply — free live TV from around the world
 
 A fast, good-looking IPTV player that runs in any browser. It ships with
 **9,600+ free channels from 170+ countries**, and **7,000+ of them were checked
@@ -6,7 +6,7 @@ and play in the browser** when the list was built.
 
 All channels come from the community-maintained
 [iptv-org](https://github.com/iptv-org/iptv) database, which only lists streams
-that broadcasters make publicly available. WorldTV hosts no video itself.
+that broadcasters make publicly available. Zapply hosts no video itself.
 
 ## Features
 
@@ -38,7 +38,7 @@ that broadcasters make publicly available. WorldTV hosts no video itself.
 
 ## Android app
 
-Download **[WorldTV.apk](https://nexeerp-dev.github.io/iptv/download/WorldTV.apk)** on your phone and open it to install
+Download **[Zapply.apk](https://nexeerp-dev.github.io/iptv/download/Zapply.apk)** on your phone and open it to install
 (Android 8 or newer; allow "Install unknown apps" for your browser when asked).
 
 The app plays more channels than the website: it fetches streams itself, so
@@ -134,7 +134,7 @@ scripts/build-data.mjs  builds data/channels.json
 scripts/probe.py        checks which streams work
 sw.js                   offline cache for the app itself
 android/                Android app (WebView shell + native stream fetching)
-download/WorldTV.apk    ready-to-install Android app
+download/Zapply.apk    ready-to-install Android app
 ```
 
 Playback uses [hls.js](https://github.com/video-dev/hls.js) and, for the few

@@ -31,7 +31,7 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 /**
- * Hosts the WorldTV web app in a WebView. The page is served from the APK's
+ * Hosts the Zapply web app in a WebView. The page is served from the APK's
  * assets, and stream requests go through {@link StreamProxy} so that channels
  * whose servers block web players (or use plain http) still play.
  */
@@ -296,7 +296,7 @@ public class MainActivity extends Activity {
         public void copy(String text, String msg) {
             runOnUiThread(() -> {
                 ClipboardManager cm = getSystemService(ClipboardManager.class);
-                cm.setPrimaryClip(ClipData.newPlainText("WorldTV", text));
+                cm.setPrimaryClip(ClipData.newPlainText("Zapply", text));
                 if (Build.VERSION.SDK_INT < 33) toast(msg);
             });
         }
