@@ -254,6 +254,9 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         web.onResume();
+        // Make sure remote-control keys reach the page again (after voice
+        // search, the keyboard or another app).
+        web.requestFocus();
     }
 
     @Override
@@ -291,6 +294,7 @@ public class MainActivity extends Activity {
         if (request != VOICE_REQUEST || result != RESULT_OK || data == null) return;
         ArrayList<String> said = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
         if (said == null || said.isEmpty()) return;
+        web.requestFocus();
         web.evaluateJavascript("window.WorldTVNative && WorldTVNative.search(" + JSONObject.quote(said.get(0)) + ")", null);
     }
 

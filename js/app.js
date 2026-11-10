@@ -224,7 +224,7 @@ function railHTML(title, list, more, opts = {}) {
     </div>
     <div class="rail-wrap">
       <button class="rail-btn prev" data-rail="-1" aria-label="Scroll left">${icon('prev')}</button>
-      <div class="rail${opts.tiles ? ' tiles' : ''}">${opts.tiles ? list.join('') : list.map((ch, i) => cardHTML(ch, i)).join('')}</div>
+      <div class="rail${opts.tiles ? ' tiles' : ''}">${opts.tiles ? list.join('') : list.map((ch, i) => cardHTML(ch, i)).join('')}${TV && more ? `<a class="more-tile" href="${more}">${icon('arrow')}<span>See all</span></a>` : ''}</div>
       <button class="rail-btn next" data-rail="1" aria-label="Scroll right">${icon('next')}</button>
     </div>
   </section>`;
@@ -437,7 +437,7 @@ function renderList() {
 function appendGrid() {
   const grid = $('#grid');
   if (!grid) return;
-  const next = state.list.slice(state.rendered, state.rendered + PAGE);
+  const next = state.list.slice(state.rendered, state.rendered + (TV ? 30 : PAGE));
   grid.insertAdjacentHTML('beforeend', next.map((ch, i) => cardHTML(ch, i, { q: state.q })).join(''));
   state.rendered += next.length;
 }
@@ -491,7 +491,7 @@ function renderPage({ animate = true, scroll = true } = {}) {
       requestAnimationFrame(() => focusFirst($('#page')));
     }
   };
-  if (animate && !REDUCED_MOTION && document.startViewTransition) document.startViewTransition(draw);
+  if (animate && !REDUCED_MOTION && !TV && document.startViewTransition) document.startViewTransition(draw);
   else draw();
   if (scroll) {
     const top = state.current && innerWidth >= 900 ? $('#page').offsetTop - 80 : 0;
@@ -760,9 +760,12 @@ function exitTvFull() {
   focusFirst(document, $('.card.playing') || $('.now .ctl.primary'));
 }
 
-function showTvInfo() {
-  if (!state.current) return;
-  const { ch, idx, sources } = state.current;
+function showTvInfo(preview = null) {
+  if (!state.current && !preview) return;
+  const ch = preview || state.current.ch;
+  const live = state.current?.ch.id === ch.id;
+  const idx = live ? state.current.idx : 0;
+  const sources = live ? state.current.sources : [];
   const list = navList();
   const n = list.findIndex(c => c.id === ch.id) + 1;
   const q = bestQuality(ch);
@@ -783,14 +786,15 @@ function showTvInfo() {
   tvInfoTimer = setTimeout(() => $('#tvInfo').classList.remove('show'), 4500);
 }
 
-function openDrawer() {
+function openDrawer(focusIdx = null) {
   const list = navList();
   if (!list.length) return;
-  const cur = state.current ? list.findIndex(c => c.id === state.current.ch.id) : 0;
-  const start = Math.max(0, cur - 150), end = Math.min(list.length, cur + 150);
+  const cur = Math.max(0, state.current ? list.findIndex(c => c.id === state.current.ch.id) : 0);
+  const at = focusIdx ?? cur;
+  const start = Math.max(0, at - 40), end = Math.min(list.length, at + 40);
   $('#drHead').innerHTML = `<b>${state.query ? `“${esc(state.query)}”` : esc(viewLabel(state.view))}</b><small>${list.length.toLocaleString()} channels</small>`;
   $('#drList').innerHTML = list.slice(start, end).map((c, k) => `
-    <button class="dr-item${c.id === state.current?.ch.id ? ' on' : ''}" data-play="${esc(c.id)}">
+    <button class="dr-item${c.id === state.current?.ch.id ? ' on' : ''}" data-play="${esc(c.id)}" data-idx="${start + k}">
       <span class="dr-num">${start + k + 1}</span>
       <span class="mini-thumb" style="--h:${hue(c.n)}"><span>${esc(initials(c.n))}</span>${c.l ? `<img src="${esc(c.l)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}</span>
       <span class="ni-text"><b>${esc(c.n)}</b><small>${flag(c.c)} ${esc(c.g.map(catName).slice(0, 1).join('') || countryName(c.c))}</small></span>
@@ -798,9 +802,33 @@ function openDrawer() {
     </button>`).join('');
   $('#tvDrawer').hidden = false;
   $('#tvInfo').classList.remove('show');
-  const on = $('#drList .dr-item.on') || $('#drList .dr-item');
+  const on = $(`#drList .dr-item[data-idx="${at}"]`) || $('#drList .dr-item');
   on.focus({ preventScroll: true });
-  on.scrollIntoView({ block: 'center' });
+  const box = $('#drList');
+  box.scrollTop = on.offsetTop - box.clientHeight / 2 + on.offsetHeight / 2;
+}
+
+// Up/down at the edge of the loaded part of the channel list loads more.
+function drawerMove(k) {
+  if (move(k, $('#tvDrawer'))) return;
+  const idx = +(document.activeElement?.dataset.idx ?? -1);
+  const n = navList().length;
+  const want = k === 'ArrowDown' ? idx + 1 : idx - 1;
+  if (idx >= 0 && want >= 0 && want < n) openDrawer(want);
+}
+
+// Zapping: show the next channel's banner right away, start playing once the
+// viewer stops pressing. Holding the button flicks through channels smoothly.
+let zapTarget = null, zapTimer = null;
+function zap(dir) {
+  const list = navList();
+  if (!list.length) return;
+  const base = zapTarget || state.current?.ch;
+  const i = base ? list.findIndex(c => c.id === base.id) : -1;
+  zapTarget = list[(i + dir + list.length) % list.length];
+  showTvInfo(zapTarget);
+  clearTimeout(zapTimer);
+  zapTimer = setTimeout(() => { const t = zapTarget; zapTarget = null; if (t) play(t); }, 450);
 }
 function closeDrawer() {
   if (!$('#tvDrawer').hidden) {
@@ -828,22 +856,28 @@ function tvSearchDone() {
 }
 
 // One key handler for the remote. Runs before the normal handlers.
+let lastKeyAt = 0;
 function tvKey(e) {
   const k = e.key;
   const done = () => { e.preventDefault(); e.stopImmediatePropagation(); };
   const isArrow = k.startsWith('Arrow');
+  // A held button repeats very fast; handle at most one move per frame budget
+  // so the screen keeps up instead of queueing presses.
+  const now = performance.now();
+  if (isArrow && e.repeat && now - lastKeyAt < 110) { done(); return; }
+  if (isArrow) lastKeyAt = now;
   const backKey = k === 'Escape' || k === 'Backspace' || k === 'GoBack' || k === 'BrowserBack';
   const t = e.target;
 
   if (tvFull()) {
     if (drawerOpen()) {
-      if (k === 'ArrowUp' || k === 'ArrowDown') { move(k, $('#tvDrawer')); done(); }
+      if (k === 'ArrowUp' || k === 'ArrowDown') { drawerMove(k); done(); }
       else if (k === 'ArrowLeft' || k === 'ArrowRight' || backKey) { closeDrawer(); done(); }
       else if (k === 'Enter') { document.activeElement?.click(); closeDrawer(); done(); }
       return;
     }
-    if (k === 'ArrowUp' || k === 'ChannelUp') { step(-1); done(); }
-    else if (k === 'ArrowDown' || k === 'ChannelDown') { step(1); done(); }
+    if (k === 'ArrowUp' || k === 'ChannelDown') { zap(-1); done(); }
+    else if (k === 'ArrowDown' || k === 'ChannelUp') { zap(1); done(); }
     else if (k === 'ArrowLeft' || k === 'ArrowRight') { openDrawer(); done(); }
     else if (k === 'Enter') {
       const btn = $('#overlay:not([hidden]) .overlay-actions .btn');
@@ -870,8 +904,14 @@ function tvKey(e) {
   }
   if (isArrow) {
     if (!move(k, scope)) {
-      // Nothing further in that direction: Up from the page goes to the top bar.
-      if (k === 'ArrowUp' && scope === document) focusFirst($('.topbar'), $('.topnav a.active'));
+      if (k === 'ArrowDown' && scope === document && $('#grid') && state.rendered < state.list.length) {
+        // Reached the last loaded row: load more channels and keep going.
+        appendGrid();
+        move(k, scope);
+      } else if (k === 'ArrowUp' && scope === document) {
+        // Nothing further up: go to the top bar.
+        focusFirst($('.topbar'), $('.topnav a.active') || $('#search'));
+      }
     }
     done();
     return;
@@ -918,7 +958,10 @@ window.WorldTVNative = {
     if (state.view.type !== 'home') { setView({ type: 'home', value: '' }); return true; }
     return false;
   },
-  step(dir) { if (state.current) step(dir); else randomChannel(); },
+  step(dir) {
+    if (!state.current) { randomChannel(); return; }
+    if (TV) { enterTvFull(); zap(dir); } else step(dir);
+  },
   pause() { if (state.current && !video.paused) video.pause(); },
   playPause: togglePlay,
   guide() { if (!state.current) return; enterTvFull(); drawerOpen() ? closeDrawer() : openDrawer(); },

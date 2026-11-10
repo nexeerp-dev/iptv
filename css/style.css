@@ -845,3 +845,29 @@ body.tv-full .osd.show { transform: none; }
 body.tv-full .overlay { align-content: center; padding-bottom: 120px; }
 body.tv .check { padding: 6px 10px; margin: 4px -10px; border-radius: 12px; }
 body.tv .check:focus { background: var(--surface-2); }
+
+/* ---------- TV performance: keep it light for TV chips ---------- */
+body.tv .aurora, body.tv .ambient { display: none; }
+body.tv *, body.tv *::before, body.tv *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+body.tv .topbar { background: var(--bg); }
+body.tv .now { background: var(--surface-solid); }
+body.tv .tv-drawer { background: #070812; }
+body.tv .card, body.tv .tile, body.tv .shelf, body.tv .stat, body.tv .page-head, body.tv .now > *,
+body.tv .facet, body.tv .empty, body.tv .player-wrap, body.tv .banner-icon, body.tv .big,
+body.tv .page-head.banner::after, body.tv .pulse, body.tv .slide.active .slide-logo .thumb { animation: none !important; }
+body.tv .card, body.tv .tile, body.tv .btn, body.tv .ctl, body.tv .chip { transition: transform .1s ease-out; }
+body.tv .plate, body.tv .slide-bg, body.tv .slide-text > *, body.tv .slide-logo .thumb, body.tv .tile-emoji, body.tv .tile-flag { transition: none !important; }
+body.tv .slide { transition: opacity .3s; }
+body.tv .card.playing::before { animation: none; background: var(--accent); }
+body.tv .card:focus, body.tv .tile:focus { box-shadow: 0 0 0 3px var(--accent-2); }
+body.tv :is(a, button, input, select, [tabindex]):focus { box-shadow: 0 0 0 3px var(--accent-2); }
+body.tv .card { box-shadow: none; }
+body.tv .rail { scroll-snap-type: none; scroll-behavior: auto; }
+body.tv .slide-bg::after { display: none; }
+.more-tile { display: none; }
+body.tv .more-tile {
+  display: grid; place-content: center; justify-items: center; gap: 8px; border-radius: var(--radius);
+  background: var(--surface); border: 1px dashed var(--line-2); color: var(--muted); font-weight: 700;
+}
+body.tv .more-tile svg { width: 28px; height: 28px; }
+body.tv .more-tile:focus { color: var(--text); background: var(--surface-2); transform: scale(1.05); }
