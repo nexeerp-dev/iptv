@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Zapply — Free Live TV</title>
   <meta name="description" content="Watch thousands of free, legal live TV channels from around the world in your browser.">
-  <meta name="theme-color" content="#0b0d14">
+  <meta name="theme-color" content="#07080f">
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -16,112 +16,133 @@
   <meta property="og:url" content="https://nexeerp-dev.github.io/iptv/">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="css/style.css">
   <script>
     try { const t = localStorage.getItem('wtv.theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
   </script>
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+      <symbol id="i-browse" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></symbol>
+      <symbol id="i-tv" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="m8 2 4 4 4-4"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1L3.2 9.4l6.1-.8z"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+      <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+      <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15a1 1 0 0 0 1.5.9l12-7.5a1 1 0 0 0 0-1.8l-12-7.5A1 1 0 0 0 7 4.5z" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="i-prev" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+      <symbol id="i-next" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+      <symbol id="i-pip" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="7" height="6" rx="1" fill="currentColor"/></symbol>
+      <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></symbol>
+      <symbol id="i-full" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+      <symbol id="i-expand" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></symbol>
+      <symbol id="i-dice" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+
   <header class="topbar">
-    <button class="icon-btn only-mobile" id="menuBtn" aria-label="Open menu" title="Menu">
-      <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-    </button>
-    <a class="brand" href="#" id="brandLink">
-      <img src="assets/icon.svg" alt="" width="28" height="28">
+    <a class="brand" href="#" id="brandLink" aria-label="Zapply home">
+      <img src="assets/icon.svg" alt="" width="34" height="34">
       <span>Zap<b>ply</b></span>
     </a>
-    <div class="search">
-      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="search" type="search" placeholder="Search channels, countries, languages…  ( / )" autocomplete="off" spellcheck="false">
+    <nav class="topnav" id="topnav" aria-label="Main">
+      <a href="#" data-nav="home"><svg><use href="#i-home"/></svg>Home</a>
+      <a href="#v=browse" data-nav="browse"><svg><use href="#i-browse"/></svg>Browse</a>
+      <a href="#v=all" data-nav="all"><svg><use href="#i-tv"/></svg>All channels</a>
+      <a href="#v=fav" data-nav="fav"><svg><use href="#i-star"/></svg>Favorites</a>
+      <span class="topnav-ink" id="navInk"></span>
+    </nav>
+    <div class="search" id="searchBox">
+      <svg class="s-ico"><use href="#i-search"/></svg>
+      <input id="search" type="search" enterkeyhint="search" placeholder="Search 9,000+ channels, countries, languages…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Search channels">
+      <kbd class="s-kbd">/</kbd>
+      <button class="s-clear" id="searchClear" aria-label="Clear search" hidden><svg><use href="#i-x"/></svg></button>
     </div>
-    <button class="icon-btn" id="randomBtn" title="Random channel (R)" aria-label="Random channel">
-      <svg viewBox="0 0 24 24"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
-    </button>
-    <button class="icon-btn" id="themeBtn" title="Switch light / dark" aria-label="Switch theme">
-      <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-    </button>
-    <button class="icon-btn" id="settingsBtn" title="Playlists & settings" aria-label="Settings">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-    </button>
+    <div class="top-actions">
+      <button class="icon-btn" id="randomBtn" title="Surprise me (R)" aria-label="Random channel"><svg><use href="#i-dice"/></svg></button>
+      <button class="icon-btn" id="themeBtn" title="Light / dark" aria-label="Switch theme"><svg><use href="#i-moon"/></svg></button>
+      <button class="icon-btn" id="settingsBtn" title="Playlists & settings" aria-label="Settings"><svg><use href="#i-gear"/></svg></button>
+    </div>
   </header>
 
-  <div class="layout">
-    <aside class="sidebar" id="sidebar">
-      <nav>
-        <div class="nav-group" id="libraryNav"></div>
-        <details class="nav-section" open>
-          <summary>Categories</summary>
-          <div id="categoryNav"></div>
-        </details>
-        <details class="nav-section" open>
-          <summary>Countries</summary>
-          <input class="nav-filter" id="countryFilter" type="search" placeholder="Find a country…" autocomplete="off">
-          <div id="countryNav"></div>
-        </details>
-      </nav>
-      <p class="credit">Channel data: <a href="https://github.com/iptv-org/iptv" target="_blank" rel="noopener">iptv-org</a>. All streams are publicly available on the web; Zapply hosts no video.</p>
-    </aside>
-    <div class="scrim" id="scrim"></div>
-
-    <main class="main" id="main">
-      <section class="player-wrap" id="playerWrap" hidden>
+  <main class="main" id="main">
+    <section class="player-wrap" id="playerWrap" hidden>
+      <div class="ambient" id="ambient" aria-hidden="true"></div>
+      <div class="player-slot">
         <div class="player" id="player">
           <video id="video" playsinline controls></video>
+          <div class="p-top" id="pTop"></div>
           <div class="overlay" id="overlay" hidden>
             <div class="spinner" id="spinner"></div>
             <div class="overlay-msg" id="overlayMsg"></div>
             <div class="overlay-actions" id="overlayActions"></div>
           </div>
           <div class="osd" id="osd"></div>
+          <div class="swipe-hint" id="swipeHint" hidden>Swipe ← → to change channel · Double-tap for fullscreen</div>
+          <div class="float-bar">
+            <button class="icon-btn small" data-action="unfloat" title="Back to player" aria-label="Back to player"><svg><use href="#i-expand"/></svg></button>
+            <button class="icon-btn small" data-action="close" title="Close" aria-label="Close player"><svg><use href="#i-x"/></svg></button>
+          </div>
         </div>
-        <div class="now" id="now"></div>
-      </section>
+      </div>
+      <aside class="now" id="now"></aside>
+    </section>
 
-      <section class="browse">
-        <div class="hero" id="hero"></div>
-        <div class="toolbar">
-          <div class="view-title">
-            <h1 id="viewTitle">All channels</h1>
-            <span class="count" id="viewCount"></span>
-          </div>
-          <div class="tools">
-            <select id="langFilter" title="Language"><option value="">All languages</option></select>
-            <select id="statusFilter" title="Which streams to show">
-              <option value="ok">✓ Verified working</option>
-              <option value="playable">Likely playable</option>
-              <option value="all">Everything</option>
-            </select>
-            <select id="sortSel" title="Sort">
-              <option value="name">A → Z</option>
-              <option value="country">By country</option>
-              <option value="quality">Best quality</option>
-            </select>
-            <button class="icon-btn small" id="layoutBtn" title="Grid / list view" aria-label="Toggle grid or list">
-              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="grid" id="grid"></div>
-        <div class="sentinel" id="sentinel"></div>
-        <div class="empty" id="empty" hidden></div>
-      </section>
-    </main>
-  </div>
+    <section class="page" id="page" aria-live="polite"></section>
+    <div class="sentinel" id="sentinel"></div>
+    <footer class="footer">
+      <p>Channel data from <a href="https://github.com/iptv-org/iptv" target="_blank" rel="noopener">iptv-org</a>. All streams are publicly available on the web; Zapply hosts no video.</p>
+    </footer>
+  </main>
+
+  <nav class="tabbar" id="tabbar" aria-label="Main">
+    <a href="#" data-nav="home"><svg><use href="#i-home"/></svg><span>Home</span></a>
+    <a href="#v=browse" data-nav="browse"><svg><use href="#i-browse"/></svg><span>Browse</span></a>
+    <button data-nav="search" id="tabSearch"><svg><use href="#i-search"/></svg><span>Search</span></button>
+    <a href="#v=fav" data-nav="fav"><svg><use href="#i-star"/></svg><span>Favorites</span></a>
+    <button data-nav="more" id="tabMore"><svg><use href="#i-gear"/></svg><span>More</span></button>
+    <span class="tab-ink" id="tabInk"></span>
+  </nav>
 
   <dialog id="settings" class="modal">
     <form method="dialog" class="modal-head">
-      <h2>Playlists &amp; settings</h2>
-      <button class="icon-btn" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <h2>Settings</h2>
+      <button class="icon-btn" aria-label="Close"><svg><use href="#i-x"/></svg></button>
     </form>
     <div class="modal-body">
-      <h3>Add your own playlist (M3U)</h3>
+      <h3>Channels to show</h3>
+      <div class="seg" id="statusSeg" role="radiogroup">
+        <button data-status="ok" role="radio">✓ Verified working</button>
+        <button data-status="playable" role="radio">Likely playable</button>
+        <button data-status="all" role="radio">Everything</button>
+      </div>
+      <p class="hint">Search always looks through every channel, and lists verified ones first.</p>
+
+      <h3>Playback</h3>
+      <label class="check"><input type="checkbox" id="autoSkip" checked> <span>If a channel fails, skip to the next one automatically</span></label>
+      <label class="check"><input type="checkbox" id="autoplayHero" checked> <span>Resume the last channel when I open the app</span></label>
+
+      <h3>Your own playlist (M3U)</h3>
       <div class="row">
         <input id="m3uUrl" type="url" placeholder="https://example.com/playlist.m3u">
-        <button class="btn" id="m3uUrlBtn">Add from URL</button>
+        <button class="btn" id="m3uUrlBtn">Add</button>
       </div>
       <div class="row">
         <label class="btn ghost file-btn">Open .m3u file<input id="m3uFile" type="file" accept=".m3u,.m3u8,audio/x-mpegurl,application/x-mpegurl,text/plain" hidden></label>
-        <span class="hint">Or paste any single .m3u8 stream link into the URL box to play it.</span>
+        <span class="hint">You can also paste a single .m3u8 link to play it.</span>
       </div>
       <div id="playlistList" class="playlist-list"></div>
 
@@ -129,24 +150,21 @@
       <p class="hint" id="dataInfo"></p>
       <div class="row">
         <button class="btn ghost" id="refreshBtn">Update from live database</button>
-        <button class="btn ghost" id="exportBtn">Export current view as M3U</button>
+        <button class="btn ghost" id="exportBtn">Export current list as M3U</button>
       </div>
       <p class="hint" id="refreshStatus"></p>
 
-      <h3>Playback</h3>
-      <label class="check"><input type="checkbox" id="autoSkip" checked> If a channel fails, skip to the next one automatically</label>
-      <label class="check"><input type="checkbox" id="autoplayHero" checked> Resume last channel when I open the app</label>
-
-      <h3>Keyboard shortcuts</h3>
+      <h3>Keyboard</h3>
       <div class="keys">
-        <span><kbd>/</kbd> Search</span><span><kbd>↑</kbd><kbd>↓</kbd> or <kbd>PgUp</kbd><kbd>PgDn</kbd> Channel up / down</span>
+        <span><kbd>/</kbd> Search</span><span><kbd>↑</kbd><kbd>↓</kbd> Channel up / down</span>
         <span><kbd>Space</kbd> Play / pause</span><span><kbd>F</kbd> Fullscreen</span><span><kbd>M</kbd> Mute</span>
-        <span><kbd>R</kbd> Random channel</span><span><kbd>S</kbd> Favorite</span><span><kbd>P</kbd> Picture-in-picture</span>
-        <span><kbd>Esc</kbd> Close player</span>
+        <span><kbd>R</kbd> Random channel</span><span><kbd>S</kbd> Favorite</span><span><kbd>P</kbd> Mini player</span>
+        <span><kbd>Esc</kbd> Close</span>
       </div>
 
       <h3>Data</h3>
       <button class="btn danger ghost" id="resetBtn">Clear favorites, history and playlists</button>
+      <p class="hint about">Zapply · channel data from iptv-org · <a id="apkLink" href="https://nexeerp-dev.github.io/iptv/download/Zapply.apk">Android app</a></p>
     </div>
   </dialog>
 
