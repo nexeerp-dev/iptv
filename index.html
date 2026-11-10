@@ -47,6 +47,7 @@
       <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
       <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
       <symbol id="i-expand" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></symbol>
+      <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
       <symbol id="i-dice" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></symbol>
     </defs>
   </svg>
@@ -72,6 +73,7 @@
       <button class="s-clear" id="searchClear" aria-label="Clear search" hidden><svg><use href="#i-x"/></svg></button>
     </div>
     <div class="top-actions">
+      <button class="icon-btn tv-only" id="voiceBtn" title="Voice search" aria-label="Voice search" hidden><svg><use href="#i-mic"/></svg></button>
       <button class="icon-btn" id="randomBtn" title="Surprise me (R)" aria-label="Random channel"><svg><use href="#i-dice"/></svg></button>
       <button class="icon-btn" id="themeBtn" title="Light / dark" aria-label="Switch theme"><svg><use href="#i-moon"/></svg></button>
       <button class="icon-btn" id="settingsBtn" title="Playlists & settings" aria-label="Settings"><svg><use href="#i-gear"/></svg></button>
@@ -92,6 +94,8 @@
           </div>
           <div class="osd" id="osd"></div>
           <div class="swipe-hint" id="swipeHint" hidden>Swipe ← → to change channel · Double-tap for fullscreen</div>
+          <div class="tv-info" id="tvInfo" aria-hidden="true"></div>
+          <div class="tv-drawer" id="tvDrawer" hidden><div class="dr-head" id="drHead"></div><div class="dr-list" id="drList"></div></div>
           <div class="float-bar">
             <button class="icon-btn small" data-action="unfloat" title="Back to player" aria-label="Back to player"><svg><use href="#i-expand"/></svg></button>
             <button class="icon-btn small" data-action="close" title="Close" aria-label="Close player"><svg><use href="#i-x"/></svg></button>

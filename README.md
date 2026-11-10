@@ -48,6 +48,30 @@ leave the app, share to other apps, "Open in another player" (VLC, MX Player),
 TV remote channel buttons, and it picks up the weekly channel list from the
 website automatically.
 
+### On a TV (Android TV, Google TV, Fire TV)
+
+The same APK works on Android-based TVs and boxes and switches to a TV layout
+made for the remote control.
+
+To install: on the TV, install the free **Downloader** app, open
+`https://nexeerp-dev.github.io/iptv/download/Zapply.apk`, and allow installing
+from unknown sources when asked. Zapply then appears in the TV's app row.
+
+| Remote button | While browsing | While watching |
+| --- | --- | --- |
+| Arrows | Move the highlight | ▲▼ change channel, ◀▶ open the channel list |
+| OK | Open / play | Show channel info |
+| Back | Go back | Return to browsing |
+| 0–9 | | Jump to channel number |
+| Channel +/− | Change channel | Change channel |
+| Play/Pause | | Pause or resume |
+| Mic / Search | Voice search | Voice search |
+| Guide | | Channel list |
+| Menu | Settings | Settings |
+
+Samsung (Tizen) and LG (webOS) TVs cannot install APKs; the website may work in
+their built-in browser, and adding `?tv=1` to the address turns on the TV layout.
+
 ### Building the APK
 
 Needs JDK 17+ and the Android SDK (platform 35).

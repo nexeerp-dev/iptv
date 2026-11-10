@@ -756,3 +756,92 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 6
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .slide .slide-text > *, .slide-logo .thumb { opacity: 1; transform: none; }
 }
+
+/* =========================================================
+   TV mode (Android TV / Google TV / Fire TV, remote control)
+   ========================================================= */
+.tv-info, .tv-drawer { display: none; }
+body.tv { --top: 64px; --tab: 0px; }
+body.tv .tabbar, body.tv .s-kbd, body.tv .rail-btn, body.tv .float-bar, body.tv .swipe-hint, body.tv .footer,
+body.tv .app-promo, body.tv #themeBtn, body.tv .stats, body.tv .mini-search,
+body.tv [data-action="pip"], body.tv [data-action="share"], body.tv [data-action="copy"], body.tv [data-action="external"], body.tv [data-action="layout"],
+body.tv .modal .file-btn, body.tv .modal .keys, body.tv .modal .keys + h3 { display: none !important; }
+body.tv .topbar { padding: 0 36px; gap: 14px; }
+body.tv .topnav a:not(.active) { font-size: 14px; gap: 7px; }
+body.tv .main { padding: 0 36px 40px; }
+body.tv .hero { height: 270px; }
+body.tv .slide { padding: 0 40px; }
+body.tv .slide-text h1 { font-size: 40px; margin: 12px 0 6px; }
+body.tv .slide-text p { margin-bottom: 16px; }
+body.tv .slide-logo { width: 240px; }
+body.tv .hero-dots { left: 40px; bottom: 18px; }
+body.tv .rail { grid-auto-columns: 176px; padding: 14px 10px 18px; margin: -14px -10px -18px; scroll-padding: 0 40px; }
+body.tv .rail.tiles { grid-auto-columns: 160px; }
+body.tv .grid { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 18px; }
+body.tv .card:hover { transform: none; box-shadow: none; }
+body.tv .shelf { margin-top: 22px; }
+
+/* The focus highlight: what the remote is pointing at */
+body.tv :focus { outline: none; }
+body.tv :is(a, button, input, select, [tabindex]):focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-2), 0 0 28px 6px rgba(34, 211, 238, .45);
+  z-index: 3;
+}
+body.tv .card:focus { transform: scale(1.08); border-color: transparent; background: var(--surface-2); }
+body.tv .card:focus .play-ico { opacity: 1; transform: none; }
+body.tv .card:focus .plate { transform: scale(1.06); }
+body.tv .tile:focus { transform: scale(1.07); }
+body.tv :is(.btn, .ctl, .chip, .facet, .pill-btn, .pill-select, .src, .see-all, .icon-btn, .next-item, .dot-btn):focus { transform: scale(1.07); }
+body.tv .topnav a:focus { color: var(--text); }
+body.tv .search input:focus { box-shadow: 0 0 0 3px var(--accent-2), 0 0 28px 6px rgba(34, 211, 238, .45); }
+body.tv .pill-select:focus-within { box-shadow: 0 0 0 3px var(--accent-2); }
+body.tv .pill-select select:focus { box-shadow: none; }
+body.tv .check input:focus { box-shadow: 0 0 0 3px var(--accent-2); }
+
+/* Full-screen TV player */
+body.tv-full { overflow: hidden; }
+body.tv-full #player { position: fixed; inset: 0; z-index: 100; border-radius: 0; box-shadow: none; }
+body.tv-full .p-top { display: none; }
+body.tv-full .tv-info { display: block; }
+.tv-info {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 90px 48px 30px; color: #fff; pointer-events: none;
+  background: linear-gradient(transparent, rgba(4, 5, 14, .75) 35%, rgba(4, 5, 14, .95));
+  opacity: 0; transform: translateY(24px); transition: opacity .35s, transform .45s var(--ease);
+}
+.tv-info.show { opacity: 1; transform: none; }
+.ti-main { display: flex; align-items: center; gap: 20px; }
+.ti-num { font-size: 46px; font-weight: 800; letter-spacing: -.03em; min-width: 64px; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; font-variant-numeric: tabular-nums; }
+.ti-logo { width: 130px; flex: none; }
+.ti-logo .thumb { border-radius: 14px; }
+.ti-logo .badge, .ti-logo .play-ico { display: none; }
+.ti-text { display: grid; gap: 2px; min-width: 0; }
+.ti-text .eyebrow { color: #7ee7f7; }
+.ti-text b { font-size: 30px; letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ti-text small { color: #c9cde0; font-size: 15px; }
+.ti-fav { margin-left: auto; font-size: 30px; color: var(--warn); }
+.ti-keys { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 18px; font-size: 13px; color: #aeb4cc; }
+.ti-keys kbd, .dr-head kbd { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .25); color: #fff; }
+body.tv-full .tv-drawer:not([hidden]) { display: flex; }
+.tv-drawer {
+  position: absolute; top: 0; left: 0; bottom: 0; z-index: 4; width: 40%; min-width: 340px; flex-direction: column; padding: 26px 0;
+  background: rgba(6, 7, 16, .93); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); color: #fff;
+  border-right: 1px solid rgba(255, 255, 255, .1); animation: drawer-in .35s var(--ease);
+}
+@keyframes drawer-in { from { transform: translateX(-100%); } }
+.dr-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 26px 14px; }
+.dr-head b { font-size: 20px; }
+.dr-head small { color: #9aa2bd; }
+.dr-list { flex: 1; overflow-y: auto; display: grid; align-content: start; gap: 4px; padding: 4px 16px; scrollbar-width: none; }
+.dr-list::-webkit-scrollbar { display: none; }
+.dr-item { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border: 0; border-radius: 12px; background: transparent; color: #fff; text-align: left; }
+.dr-item .ni-text small { color: #9aa2bd; }
+.dr-item.on { background: rgba(124, 92, 255, .28); }
+body.tv .dr-item:focus { background: rgba(255, 255, 255, .14); box-shadow: inset 0 0 0 2px var(--accent-2); transform: none; }
+.dr-num { width: 40px; flex: none; color: #9aa2bd; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.dr-fav { margin-left: auto; color: var(--warn); }
+body.tv-full .osd { top: 40px; right: 48px; left: auto; transform: none; font-size: 40px; padding: 12px 24px; }
+body.tv-full .osd.show { transform: none; }
+body.tv-full .overlay { align-content: center; padding-bottom: 120px; }
+body.tv .check { padding: 6px 10px; margin: 4px -10px; border-radius: 12px; }
+body.tv .check:focus { background: var(--surface-2); }

@@ -3,6 +3,7 @@ package io.github.worldtv;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.PictureInPictureParams;
+import android.app.UiModeManager;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -13,6 +14,10 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
+import android.view.inputmethod.InputMethodManager;
+import java.util.ArrayList;
+import org.json.JSONObject;
 import android.util.Rational;
 import android.view.KeyEvent;
 import android.view.View;
@@ -46,12 +51,18 @@ public class MainActivity extends Activity {
     private WebChromeClient.CustomViewCallback customCallback;
     private volatile boolean playing = false;
     private StreamProxy proxy;
+    private boolean isTv;
+    private static final int VOICE_REQUEST = 41;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         proxy = new StreamProxy(this);
+        UiModeManager ui = getSystemService(UiModeManager.class);
+        isTv = (ui != null && ui.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION)
+                || getPackageManager().hasSystemFeature("android.software.leanback")
+                || getPackageManager().hasSystemFeature("amazon.hardware.fire_tv");
 
         root = new FrameLayout(this);
         root.setBackgroundColor(Color.parseColor("#0B0D14"));
@@ -107,6 +118,10 @@ public class MainActivity extends Activity {
                 exitFullscreen();
             }
         });
+
+        web.setFocusable(true);
+        web.setFocusableInTouchMode(true);
+        web.requestFocus();
 
         if (state != null) web.restoreState(state);
         else web.loadUrl(startUrlFor(getIntent()));
@@ -181,7 +196,7 @@ public class MainActivity extends Activity {
     protected void onUserLeaveHint() {
         super.onUserLeaveHint();
         // Going home while a channel plays: keep watching in a small window.
-        if (playing) {
+        if (playing && !isTv) {
             web.evaluateJavascript("window.WorldTVNative && WorldTVNative.goFullscreen()", null);
             enterPip();
         }
@@ -217,6 +232,10 @@ public class MainActivity extends Activity {
             int k = e.getKeyCode();
             if (k == KeyEvent.KEYCODE_CHANNEL_UP || k == KeyEvent.KEYCODE_MEDIA_NEXT) { js("WorldTVNative.step(1)"); return true; }
             if (k == KeyEvent.KEYCODE_CHANNEL_DOWN || k == KeyEvent.KEYCODE_MEDIA_PREVIOUS) { js("WorldTVNative.step(-1)"); return true; }
+            if (k == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || k == KeyEvent.KEYCODE_MEDIA_PLAY || k == KeyEvent.KEYCODE_MEDIA_PAUSE) { js("WorldTVNative.playPause()"); return true; }
+            if (k == KeyEvent.KEYCODE_GUIDE || k == KeyEvent.KEYCODE_TV_INPUT || k == KeyEvent.KEYCODE_PROG_RED) { js("WorldTVNative.guide()"); return true; }
+            if (k == KeyEvent.KEYCODE_MENU || k == KeyEvent.KEYCODE_SETTINGS) { js("WorldTVNative.menu()"); return true; }
+            if (k == KeyEvent.KEYCODE_SEARCH || k == KeyEvent.KEYCODE_VOICE_ASSIST) { startVoiceSearch(); return true; }
         }
         return super.dispatchKeyEvent(e);
     }
@@ -251,6 +270,30 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
+    // ---------- voice search ----------
+    void startVoiceSearch() {
+        runOnUiThread(() -> {
+            Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            i.putExtra(RecognizerIntent.EXTRA_PROMPT, "Say a channel, country or category");
+            try {
+                startActivityForResult(i, VOICE_REQUEST);
+            } catch (ActivityNotFoundException e) {
+                toast("Voice search is not available on this device");
+            }
+        });
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
+        if (request != VOICE_REQUEST || result != RESULT_OK || data == null) return;
+        ArrayList<String> said = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+        if (said == null || said.isEmpty()) return;
+        web.evaluateJavascript("window.WorldTVNative && WorldTVNative.search(" + JSONObject.quote(said.get(0)) + ")", null);
+    }
+
     // ---------- helpers ----------
     void openExternal(String url) {
         try {
@@ -267,6 +310,18 @@ public class MainActivity extends Activity {
     /** Methods the web app can call as window.WorldTVAndroid.*. */
     class Bridge {
         @JavascriptInterface public boolean isApp() { return true; }
+        @JavascriptInterface public boolean isTV() { return isTv; }
+        @JavascriptInterface public void voiceSearch() { startVoiceSearch(); }
+
+        /** Opens the on-screen keyboard for the focused text box (TV remotes). */
+        @JavascriptInterface
+        public void showKeyboard() {
+            runOnUiThread(() -> {
+                web.requestFocus();
+                InputMethodManager imm = getSystemService(InputMethodManager.class);
+                if (imm != null) imm.showSoftInput(web, InputMethodManager.SHOW_IMPLICIT);
+            });
+        }
         @JavascriptInterface public String siteUrl() { return SITE; }
 
         @JavascriptInterface

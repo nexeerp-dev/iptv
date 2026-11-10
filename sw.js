@@ -1,7 +1,7 @@
 // Caches the app itself so it opens fast and works as an installed app.
 // Video streams are never cached.
-const CACHE = 'wtv-shell-v4';
-const SHELL = ['./', 'index.html', 'css/style.css', 'js/app.js', 'js/builder.js', 'js/m3u.js', 'js/search.js', 'assets/icon.svg', 'manifest.webmanifest'];
+const CACHE = 'wtv-shell-v5';
+const SHELL = ['./', 'index.html', 'css/style.css', 'js/app.js', 'js/builder.js', 'js/m3u.js', 'js/search.js', 'js/tvnav.js', 'assets/icon.svg', 'manifest.webmanifest'];
 
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));
 self.addEventListener('activate', e => e.waitUntil(

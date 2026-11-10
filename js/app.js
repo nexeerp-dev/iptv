@@ -1,6 +1,7 @@
 import { buildCatalog, fetchApi } from './builder.js';
 import { parseM3U, toM3U } from './m3u.js';
 import { indexChannel, makeQuery, score, matchNames, highlight } from './search.js';
+import { move, focusFirst, focusEl } from './tvnav.js';
 
 // ---------- helpers ----------
 const $ = sel => document.querySelector(sel);
@@ -19,6 +20,12 @@ const TOUCH = matchMedia('(pointer: coarse)').matches;
 const NATIVE = (() => { try { return window.WorldTVAndroid?.isApp() === true; } catch { return false; } })();
 const SITE_URL = NATIVE ? window.WorldTVAndroid.siteUrl() : location.href.split('#')[0];
 const IS_HTTPS = !NATIVE && location.protocol === 'https:';
+// TV mode: Android TV / Google TV / Fire TV app, TV browsers, or ?tv=1 for testing.
+const TV = (() => {
+  try { if (NATIVE && window.WorldTVAndroid.isTV?.()) return true; } catch {}
+  if (/[?&]tv=1\b/.test(location.search)) return true;
+  return /SMART-TV|SmartTV|Tizen|Web0S|webOS|BRAVIA|HbbTV|GoogleTV|Android TV|AFT[A-Z]{1,3}\b|CrKey/i.test(navigator.userAgent);
+})();
 const APK_URL = 'https://nexeerp-dev.github.io/iptv/download/Zapply.apk';
 const isVerified = s => s[2] === 'ok' || (NATIVE && s[2] === 'nc');
 const CAT_ICONS = {
@@ -326,7 +333,7 @@ function startHero(n) {
     const slide = $(`#hero .slide[data-slide="${i}"]`);
     if (slide) $('#hero').style.setProperty('--h', slide.style.getPropertyValue('--h'));
   };
-  const tick = () => { if (!document.hidden && !$('#hero')?.matches(':hover')) go(i + 1); };
+  const tick = () => { if (!document.hidden && !$('#hero')?.matches(':hover, :focus-within')) go(i + 1); };
   heroTimer = setInterval(tick, 6500);
   const hero = $('#hero');
   hero._go = k => { go(k); clearInterval(heroTimer); heroTimer = setInterval(tick, 6500); };
@@ -480,6 +487,9 @@ function renderPage({ animate = true, scroll = true } = {}) {
     else renderList();
     updateNav();
     markPlaying();
+    if (TV && !tvFull() && !$('#settings').open && !document.activeElement?.closest('.topbar')) {
+      requestAnimationFrame(() => focusFirst($('#page')));
+    }
   };
   if (animate && !REDUCED_MOTION && document.startViewTransition) document.startViewTransition(draw);
   else draw();
@@ -613,11 +623,12 @@ function play(ch, srcIdx = 0) {
   showOverlay(`<div class="tuning">${thumbHTML(ch)}</div>Tuning to <b>${esc(ch.n)}</b>${sources.length > 1 ? `<small>source ${srcIdx + 1} of ${sources.length}</small>` : ''}`, [], true);
   loadTimer = setTimeout(() => sourceFailed('The stream took too long to start.'), 20000);
   attach(sources[srcIdx][0]).catch(e => sourceFailed(e.message));
-  if (first || innerWidth < 900) {
+  if (TV) { enterTvFull(); showTvInfo(); }
+  else if (first || innerWidth < 900) {
     $('#player').classList.remove('floating');
     scrollTo({ top: 0, behavior: REDUCED_MOTION ? 'auto' : 'smooth' });
   }
-  if (first && TOUCH && !store.get('swipeHint', false)) {
+  if (first && TOUCH && !TV && !store.get('swipeHint', false)) {
     const h = $('#swipeHint');
     h.hidden = false;
     setTimeout(() => { h.hidden = true; }, 4500);
@@ -675,6 +686,7 @@ function sourceFailed(reason) {
 
 function fail(reason) {
   destroyEngines();
+  if (TV) $('#tvInfo').classList.remove('show');
   $$(`.card[data-id="${CSS.escape(state.current.ch.id)}"]`).forEach(c => c.classList.add('broken'));
   const actions = [{ action: 'next', label: 'Next channel ›' }, { action: 'retry', label: 'Try again', ghost: true }];
   const name = esc(state.current.ch.n);
@@ -702,7 +714,7 @@ function step(dir) {
   const i = state.current ? list.findIndex(c => c.id === state.current.ch.id) : -1;
   const next = list[(i + dir + list.length) % list.length];
   play(next);
-  osd(`${dir > 0 ? '›' : '‹'}  ${next.n}`);
+  if (!TV) osd(`${dir > 0 ? '›' : '‹'}  ${next.n}`);
 }
 function randomChannel(pool) {
   pool = pool?.length ? pool : state.catalog.channels.filter(c => streamsFor(c).some(isVerified));
@@ -714,18 +726,175 @@ function closePlayer() {
   state.current = null;
   $('#playerWrap').hidden = true;
   $('#player').classList.remove('floating');
-  document.body.classList.remove('has-player');
+  document.body.classList.remove('has-player', 'tv-full');
+  closeDrawer();
   document.title = 'Zapply — Free Live TV';
   history.replaceState(null, '', viewHash(state.view));
   markPlaying();
 }
 
 function goFullscreen() {
+  if (TV) { if (state.current) enterTvFull(); return; }
   if (!document.fullscreenElement && state.current) $('#player').requestFullscreen?.().catch(() => {});
 }
 function toggleFullscreen() {
+  if (TV) { document.body.classList.contains('tv-full') ? exitTvFull() : goFullscreen(); return; }
   if (document.fullscreenElement) document.exitFullscreen();
   else goFullscreen();
+}
+
+// ---------- TV mode ----------
+let tvInfoTimer = null, numBuf = '', numTimer = null, kbOpen = false;
+const tvFull = () => document.body.classList.contains('tv-full');
+const drawerOpen = () => !$('#tvDrawer').hidden;
+
+function enterTvFull() {
+  document.body.classList.add('tv-full');
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+}
+function exitTvFull() {
+  closeDrawer();
+  document.body.classList.remove('tv-full');
+  $('#tvInfo').classList.remove('show');
+  scrollTo({ top: 0 });
+  focusFirst(document, $('.card.playing') || $('.now .ctl.primary'));
+}
+
+function showTvInfo() {
+  if (!state.current) return;
+  const { ch, idx, sources } = state.current;
+  const list = navList();
+  const n = list.findIndex(c => c.id === ch.id) + 1;
+  const q = bestQuality(ch);
+  $('#tvInfo').innerHTML = `
+    <div class="ti-main">
+      ${n ? `<div class="ti-num">${n}</div>` : ''}
+      <div class="ti-logo">${thumbHTML(ch)}</div>
+      <div class="ti-text">
+        <span class="eyebrow"><i class="pulse"></i> Live${q >= 720 ? ` · ${q >= 2160 ? '4K' : q >= 1080 ? 'Full HD' : 'HD'}` : ''}${sources.length > 1 ? ` · source ${idx + 1}/${sources.length}` : ''}</span>
+        <b>${esc(ch.n)}</b>
+        <small>${flag(ch.c)} ${esc(ch.c ? countryName(ch.c) : 'International')}${ch.g.length ? ' · ' + esc(ch.g.map(catName).join(', ')) : ''}${ch.la.length ? ' · ' + esc(ch.la.slice(0, 2).map(langName).join(', ')) : ''}</small>
+      </div>
+      ${state.favs.has(ch.id) ? '<span class="ti-fav">★</span>' : ''}
+    </div>
+    <div class="ti-keys"><span><kbd>▲</kbd><kbd>▼</kbd> Change channel</span><span><kbd>◀</kbd><kbd>▶</kbd> Channel list</span><span><kbd>OK</kbd> Info</span><span><kbd>0-9</kbd> Go to number</span><span><kbd>BACK</kbd> Browse</span></div>`;
+  $('#tvInfo').classList.add('show');
+  clearTimeout(tvInfoTimer);
+  tvInfoTimer = setTimeout(() => $('#tvInfo').classList.remove('show'), 4500);
+}
+
+function openDrawer() {
+  const list = navList();
+  if (!list.length) return;
+  const cur = state.current ? list.findIndex(c => c.id === state.current.ch.id) : 0;
+  const start = Math.max(0, cur - 150), end = Math.min(list.length, cur + 150);
+  $('#drHead').innerHTML = `<b>${state.query ? `“${esc(state.query)}”` : esc(viewLabel(state.view))}</b><small>${list.length.toLocaleString()} channels</small>`;
+  $('#drList').innerHTML = list.slice(start, end).map((c, k) => `
+    <button class="dr-item${c.id === state.current?.ch.id ? ' on' : ''}" data-play="${esc(c.id)}">
+      <span class="dr-num">${start + k + 1}</span>
+      <span class="mini-thumb" style="--h:${hue(c.n)}"><span>${esc(initials(c.n))}</span>${c.l ? `<img src="${esc(c.l)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}</span>
+      <span class="ni-text"><b>${esc(c.n)}</b><small>${flag(c.c)} ${esc(c.g.map(catName).slice(0, 1).join('') || countryName(c.c))}</small></span>
+      ${state.favs.has(c.id) ? '<span class="dr-fav">★</span>' : ''}
+    </button>`).join('');
+  $('#tvDrawer').hidden = false;
+  $('#tvInfo').classList.remove('show');
+  const on = $('#drList .dr-item.on') || $('#drList .dr-item');
+  on.focus({ preventScroll: true });
+  on.scrollIntoView({ block: 'center' });
+}
+function closeDrawer() {
+  if (!$('#tvDrawer').hidden) {
+    $('#tvDrawer').hidden = true;
+    if (document.activeElement?.closest('#tvDrawer')) document.activeElement.blur();
+  }
+}
+
+function numberKey(d) {
+  numBuf = (numBuf + d).slice(-4);
+  osd(numBuf);
+  clearTimeout(numTimer);
+  numTimer = setTimeout(() => {
+    const n = +numBuf; numBuf = '';
+    const list = navList();
+    if (list[n - 1]) play(list[n - 1]); else osd('No channel ' + n);
+  }, 1400);
+}
+
+function togglePlay() { if (state.current) video.paused ? tryPlay() : video.pause(); }
+
+function tvSearchDone() {
+  kbOpen = false;
+  setTimeout(() => focusFirst($('#page'), $('#grid .card') || $('#page .facet')), 80);
+}
+
+// One key handler for the remote. Runs before the normal handlers.
+function tvKey(e) {
+  const k = e.key;
+  const done = () => { e.preventDefault(); e.stopImmediatePropagation(); };
+  const isArrow = k.startsWith('Arrow');
+  const backKey = k === 'Escape' || k === 'Backspace' || k === 'GoBack' || k === 'BrowserBack';
+  const t = e.target;
+
+  if (tvFull()) {
+    if (drawerOpen()) {
+      if (k === 'ArrowUp' || k === 'ArrowDown') { move(k, $('#tvDrawer')); done(); }
+      else if (k === 'ArrowLeft' || k === 'ArrowRight' || backKey) { closeDrawer(); done(); }
+      else if (k === 'Enter') { document.activeElement?.click(); closeDrawer(); done(); }
+      return;
+    }
+    if (k === 'ArrowUp' || k === 'ChannelUp') { step(-1); done(); }
+    else if (k === 'ArrowDown' || k === 'ChannelDown') { step(1); done(); }
+    else if (k === 'ArrowLeft' || k === 'ArrowRight') { openDrawer(); done(); }
+    else if (k === 'Enter') {
+      const btn = $('#overlay:not([hidden]) .overlay-actions .btn');
+      if (btn) btn.click(); else showTvInfo();
+      done();
+    }
+    else if (/^[0-9]$/.test(k)) { numberKey(k); done(); }
+    else if (k === ' ' || k === 'MediaPlayPause') { togglePlay(); done(); }
+    else if (backKey) { exitTvFull(); done(); }
+    return;
+  }
+
+  const scope = $('#settings').open ? $('#settings') : document;
+  if (t.id === 'search') {
+    if (k === 'Enter') {
+      if ((kbOpen || !NATIVE) && t.value.trim()) { setTimeout(tvSearchDone, 0); return; }
+      if (NATIVE) { kbOpen = true; window.WorldTVAndroid.showKeyboard(); }
+      done(); // keep the cursor in the box
+      return;
+    }
+    if (k === 'ArrowDown') { kbOpen = false; t.blur(); focusFirst($('#page'), $('#grid .card')); done(); return; }
+    if (k === 'ArrowUp' || ((k === 'ArrowLeft' || k === 'ArrowRight') && !t.value)) { if (move(k, scope)) done(); return; }
+    return; // let left/right move the text cursor
+  }
+  if (isArrow) {
+    if (!move(k, scope)) {
+      // Nothing further in that direction: Up from the page goes to the top bar.
+      if (k === 'ArrowUp' && scope === document) focusFirst($('.topbar'), $('.topnav a.active'));
+    }
+    done();
+    return;
+  }
+  if (k === 'Enter') {
+    const el = document.activeElement;
+    if (!el || el === document.body) { focusFirst(scope); done(); return; }
+    if (el.tagName === 'SELECT') { try { el.showPicker(); } catch { el.focus(); } done(); return; }
+    if (el.classList.contains('check')) {
+      const box = el.querySelector('input');
+      box.checked = !box.checked;
+      box.dispatchEvent(new Event('change', { bubbles: true }));
+      done();
+      return;
+    }
+    if (el.matches('input')) return;
+    el.click();
+    done();
+    return;
+  }
+  if (k === 'ChannelUp' || k === 'ChannelDown') { window.WorldTVNative.step(k === 'ChannelUp' ? 1 : -1); done(); return; }
+  if (k === 'MediaPlayPause') { togglePlay(); done(); return; }
+  if (backKey && !NATIVE && !(t.matches?.('input') && k === 'Backspace')) { window.WorldTVNative.back(); done(); }
 }
 
 video.addEventListener('playing', () => { clearTimeout(loadTimer); hideOverlay(); if (NATIVE) window.WorldTVAndroid.setPlaying(true); });
@@ -741,6 +910,8 @@ video.volume = vol.v; video.muted = vol.m;
 // Called by the Android app (back button, TV remote, leaving the app).
 window.WorldTVNative = {
   back() {
+    if (drawerOpen()) { closeDrawer(); return true; }
+    if (tvFull()) { exitTvFull(); return true; }
     if ($('#settings').open) { $('#settings').close(); return true; }
     if (state.searchOpen || state.query) { clearSearch(); return true; }
     if (state.current) { closePlayer(); return true; }
@@ -749,6 +920,15 @@ window.WorldTVNative = {
   },
   step(dir) { if (state.current) step(dir); else randomChannel(); },
   pause() { if (state.current && !video.paused) video.pause(); },
+  playPause: togglePlay,
+  guide() { if (!state.current) return; enterTvFull(); drawerOpen() ? closeDrawer() : openDrawer(); },
+  menu() { if ($('#settings').open) $('#settings').close(); else openSettings(); },
+  search(text) {
+    clearSearch(false);
+    $('#search').value = text;
+    runSearch(text, { record: true });
+    if (TV) tvSearchDone();
+  },
   goFullscreen,
 };
 
@@ -940,12 +1120,25 @@ function bindPlayerGestures() {
 
   // Float the player in a corner while scrolling through channels (wide screens).
   new IntersectionObserver(([en]) => {
-    const float = !en.isIntersecting && state.current && innerWidth >= 900 && !document.fullscreenElement;
+    const float = !TV && !en.isIntersecting && state.current && innerWidth >= 900 && !document.fullscreenElement;
     p.classList.toggle('floating', !!float);
   }, { threshold: 0.25 }).observe($('.player-slot'));
 }
 
 function bind() {
+  if (TV) {
+    document.body.classList.add('tv');
+    video.controls = false;
+    video.tabIndex = -1;
+    window.addEventListener('keydown', tvKey, true);
+    $('#search').addEventListener('blur', () => { kbOpen = false; });
+    if (NATIVE) $('#voiceBtn').hidden = false;
+    $('#voiceBtn').addEventListener('click', () => window.WorldTVAndroid?.voiceSearch());
+    $('#search').placeholder = 'Search channels';
+    // Whole toggle rows are easier to reach with a remote than the small switches.
+    $$('.check').forEach(l => { l.tabIndex = 0; l.querySelector('input').tabIndex = -1; });
+    $('#settings').addEventListener('close', () => setTimeout(() => focusFirst($('#page')), 50));
+  }
   document.addEventListener('click', e => {
     const fav = e.target.closest('[data-fav]');
     if (fav) { e.stopPropagation(); toggleFav(fav.dataset.fav, fav); return; }
@@ -1139,6 +1332,7 @@ function openSettings() {
   updateDataInfo();
   $$('#statusSeg [data-status]').forEach(b => b.setAttribute('aria-checked', b.dataset.status === state.status));
   $('#settings').showModal();
+  if (TV) focusEl($('#statusSeg [aria-checked="true"]'));
 }
 
 function updateDataInfo() {
